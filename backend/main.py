@@ -5,12 +5,13 @@ import numpy as np
 from PIL import Image
 from keras.models import load_model
 from flask_cors import CORS
-from datetime import datetime, timezone
+from datetime import datetime
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Image as RLImage
 import base64
 import os
+import gdown   # ✅ ADDED
 
 app = Flask(
     __name__,
@@ -18,25 +19,36 @@ app = Flask(
     static_url_path=""
 )
 
-# SESSION CONFIG
+#SESSION CONFIGRATION
 app.secret_key = "supersecretkey"
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 
-# CORS
+#CORS
 CORS(app, supports_credentials=True)
 
-# DATABASE 
-client = MongoClient("mongodb://localhost:27017/")
+#DATABASE 
+# ✅ UPDATED TO MONGODB ATLAS
+client = MongoClient("mongodb+srv://sushant6:sushant6@cluster0.kdxgvoq.mongodb.net/skin_app?retryWrites=true&w=majority")
 db = client["skin_app"]
 
 users = db["users"]
 history = db["history"]
 
-# MODEL
-model = load_model("skin_cancer_cnn.h5")
+#MODEL
+# ✅ GOOGLE DRIVE DOWNLOAD ADDED
+MODEL_PATH = "skin_cancer_cnn.h5"
 
-# FRONTEND ROUTES
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model from Google Drive...")
+
+    url = "https://drive.google.com/uc?id=1MPRUAK8PSxUH4L7DydaJiTUhyg2UxFHO"
+
+    gdown.download(url, MODEL_PATH, quiet=False)
+
+model = load_model(MODEL_PATH)
+
+#FRONTEND ROUTES
 @app.route("/")
 def home():
     return send_from_directory(app.static_folder, "login.html")
@@ -109,30 +121,36 @@ def predict():
 
     file = request.files["file"]
 
-    # IMAGE PROCESSING
+    #Image processing:-
     img = Image.open(file).convert("RGB")
     img = img.resize((224, 224))
 
     arr = np.array(img) / 255.0
     arr = np.expand_dims(arr, axis=0)
 
-    # PREDICTION
+    #Prediction:-
     prediction = model.predict(arr)[0][0]
 
+    #Label:-
     result = "Malignant" if prediction > 0.5 else "Benign"
+
+    # Confidence:-
     confidence = float(prediction if prediction > 0.5 else 1 - prediction)
 
+    # Risk:-
     risk = get_risk(confidence)
+
+    # Explanation:-
     explanation = get_explanation(result)
 
-    # ✅ FIX: SAVE TIME IN UTC (IMPORTANT)
+    # SAVE TO DATABASE:-
     record = {
         "username": session["user"],
         "prediction": result,
         "confidence": confidence,
         "risk": risk,
         "explanation": explanation,
-        "date": datetime.now(timezone.utc)   # 🔥 FIXED HERE
+        "date": datetime.now()
     }
 
     history.insert_one(record)
@@ -143,7 +161,6 @@ def predict():
         "risk": risk,
         "explanation": explanation
     })
-
 
 # HISTORY 
 @app.route("/history-page")
@@ -164,16 +181,25 @@ def get_history():
         ).sort("date", -1)
     )
 
+    # ✅ FORMAT DATE PROPERLY
+    for record in user_history:
+        if "date" in record:
+            record["date"] = record["date"].strftime("%d-%m-%Y %I:%M %p")
+
     return jsonify(user_history)
 
-
 # DOWNLOAD REPORT
-@app.route("/download-report", methods=["POST"])
+
+  
+# DOWNLOAD REPORT
+@app.route("/download-report", methods=["POST", "GET"])
 def download_report():
+    print("DOWNLOAD REPORT CALLED")  # debug
+
     if "user" not in session:
         return jsonify({"message": "Unauthorized"}), 401
     
-    data = request.json
+    data = request.get_json() or {}   # ✅ FIXED (safe)
 
     try:
         os.makedirs("reports", exist_ok=True)
@@ -186,24 +212,22 @@ def download_report():
         content.append(Paragraph("<b>SkinAI Diagnostic Report</b>", styles["Title"]))
         content.append(Spacer(1, 12))
 
-        # USER
         content.append(Paragraph(f"<b>Patient:</b> {session['user']}", styles["Normal"]))
-
-        # ✅ FIX: Use local time for PDF display
-        local_time = datetime.now().strftime('%d-%m-%Y %H:%M')
-        content.append(Paragraph(f"<b>Date:</b> {local_time}", styles["Normal"]))
+        content.append(Paragraph(f"<b>Date:</b> {datetime.now().strftime('%d-%m-%Y %H:%M')}", styles["Normal"]))
         content.append(Spacer(1, 10))
 
-        # IMAGE
+        # ✅ SAFE IMAGE HANDLING
         image_path = None
-        if data.get("image"):
+
+        if "image" in data and data["image"]:
             try:
                 image_data = data["image"].split(",")[1]
                 image_path = os.path.join("reports", "temp.png")
 
                 with open(image_path, "wb") as f:
                     f.write(base64.b64decode(image_data))
-            except:
+            except Exception as e:
+                print("Image error:", e)
                 image_path = None
 
         if image_path and os.path.exists(image_path):
@@ -212,22 +236,23 @@ def download_report():
             content.append(RLImage(image_path, width=200, height=200))
             content.append(Spacer(1, 12))
 
-        # RESULT
         content.append(Paragraph("<b>Analysis Result</b>", styles["Heading2"]))
         content.append(Spacer(1, 8))
 
-        content.append(Paragraph(f"<b>Prediction:</b> {data['prediction']}", styles["Normal"]))
-        content.append(Paragraph(f"<b>Confidence:</b> {data['confidence']}", styles["Normal"]))
+        content.append(Paragraph(f"<b>Prediction:</b> {data.get('prediction', 'N/A')}", styles["Normal"]))
+        content.append(Paragraph(f"<b>Confidence:</b> {data.get('confidence', 'N/A')}", styles["Normal"]))
 
-        risk_color = "red" if data["risk"] == "High" else "orange" if data["risk"] == "Medium" else "green"
+        risk = data.get("risk", "Low")
+        risk_color = "red" if risk == "High" else "orange" if risk == "Medium" else "green"
+
         content.append(Paragraph(
-            f"<b>Risk Level:</b> <font color='{risk_color}'>{data['risk']}</font>",
+            f"<b>Risk Level:</b> <font color='{risk_color}'>{risk}</font>",
             styles["Normal"]
         ))
 
         content.append(Spacer(1, 10))
         content.append(Paragraph("<b>AI Explanation</b>", styles["Heading3"]))
-        content.append(Paragraph(data["explanation"], styles["Normal"]))
+        content.append(Paragraph(data.get("explanation", "No explanation available"), styles["Normal"]))
         content.append(Spacer(1, 12))
 
         content.append(Paragraph(
@@ -236,6 +261,7 @@ def download_report():
         ))
 
         doc.build(content)
+
         return send_from_directory("reports", "report.pdf", as_attachment=True)
     
     except Exception as e:

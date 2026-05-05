@@ -9,7 +9,7 @@ function showPopup(message, success = true) {
   });
 }
 
-
+// ================= LOGIN =================
 function login() {
   fetch(`${BASE_URL}/login`, {
     method: "POST",
@@ -26,13 +26,14 @@ function login() {
 
     if (data.message === "Login successful") {
       setTimeout(() => {
-        window.location.href = `${BASE_URL}/index`;
+        window.location.href = "/index";   // ✅ FIXED
       }, 1000);
     }
   })
   .catch(() => showPopup("Login failed", false));
 }
 
+// ================= SIGNUP =================
 function signup() {
   fetch(`${BASE_URL}/signup`, {
     method: "POST",
@@ -56,6 +57,7 @@ function signup() {
   .catch(() => showPopup("Signup failed", false));
 }
 
+// ================= UPLOAD =================
 function upload() {
   let file = document.getElementById("file").files[0];
 
@@ -111,11 +113,9 @@ function upload() {
 
     resultEl.innerHTML = resultHTML;
 
-    if (data.prediction === "Malignant") {
-      box.className = "result-box red";
-    } else {
-      box.className = "result-box green";
-    }
+    box.className = data.prediction === "Malignant"
+      ? "result-box red"
+      : "result-box green";
 
     showPopup("Prediction completed");
   })
@@ -127,12 +127,12 @@ function upload() {
   });
 }
 
+// ================= LOGOUT =================
 function logout() {
   fetch(`${BASE_URL}/logout`, {
     method: "GET",
     credentials: "include"
   })
-  .then(res => res.json())
   .then(() => {
     showPopup("Logged out successfully");
 
@@ -143,9 +143,12 @@ function logout() {
   .catch(() => showPopup("Logout failed", false));
 }
 
+// ================= HISTORY NAVIGATION =================
 function goToHistory() {
-  window.location.href = `${BASE_URL}/history-page`;
+  window.location.href = "/history-page";   // ✅ FIXED (IMPORTANT)
 }
+
+// ================= LOAD HISTORY =================
 function loadHistory() {
   const riskFilter = document.getElementById("riskFilter").value;
   const dateFilter = document.getElementById("dateFilter").value;
@@ -170,7 +173,8 @@ function loadHistory() {
       if (riskFilter !== "all" && item.risk !== riskFilter) return false;
 
       if (dateFilter) {
-        let itemDate = new Date(item.date).toISOString().split("T")[0];
+        let itemDate = new Date(item.date)
+          .toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });  // ✅ FIXED
         if (itemDate !== dateFilter) return false;
       }
 
@@ -193,11 +197,10 @@ function loadHistory() {
         <h3>${item.prediction === "Malignant" ? "⚠️ Malignant" : "✅ Benign"}</h3>
         <p><strong>Confidence:</strong> ${(item.confidence * 100).toFixed(2)}%</p>
         <p><strong>Risk:</strong> ${item.risk}</p>
-        <p><strong>Date:</strong> ${new Date(item.date).toLocaleString()}</p>
+        <p><strong>Date:</strong> ${new Date(item.date).toLocaleString("en-IN")}</p>
         <p>${item.explanation}</p>
 
-        <button class="pdf-btn">📄 Download Report</button>
-      `;
+<button class="pdf-btn" type="button">📄 Download Report</button>      `;
 
       card.querySelector(".pdf-btn").addEventListener("click", () => {
         downloadPDF({
@@ -217,47 +220,25 @@ function loadHistory() {
   });
 }
 
+// ================= PDF =================
 function downloadPDF(data) {
-  const fileInput = document.getElementById("file");
-  const file = fileInput ? fileInput.files[0] : null;
-
-  if (file) {
-    const reader = new FileReader();
-
-    reader.onload = function () {
-      fetch(`${BASE_URL}/download-report`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          ...data,
-          image: reader.result
-        })
-      })
-      .then(res => res.blob())
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url);
-      });
-    };
-
-    reader.readAsDataURL(file);
-
-  } else {
-    fetch(`${BASE_URL}/download-report`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify(data)
-    })
-    .then(res => res.blob())
-    .then(blob => {
-      const url = window.URL.createObjectURL(blob);
-      window.open(url);
-    });
-  }
+  fetch(`${BASE_URL}/download-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "include",
+    body: JSON.stringify(data)
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Failed");
+    return res.blob();
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    window.open(url);
+  })
+  .catch(() => {
+    alert("PDF download failed");
+  });
 }
