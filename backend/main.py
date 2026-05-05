@@ -5,12 +5,11 @@ import numpy as np
 from PIL import Image
 from keras.models import load_model
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timezone
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Image as RLImage
 import base64
-
 import os
 
 app = Flask(
@@ -19,25 +18,25 @@ app = Flask(
     static_url_path=""
 )
 
-#SESSION CONFIGRATION
+# SESSION CONFIG
 app.secret_key = "supersecretkey"
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 
-#CORS
+# CORS
 CORS(app, supports_credentials=True)
 
-#DATABASE 
+# DATABASE 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["skin_app"]
 
 users = db["users"]
 history = db["history"]
 
-#MODEL
+# MODEL
 model = load_model("skin_cancer_cnn.h5")
 
-#FRONTEND ROUTES
+# FRONTEND ROUTES
 @app.route("/")
 def home():
     return send_from_directory(app.static_folder, "login.html")
@@ -110,36 +109,30 @@ def predict():
 
     file = request.files["file"]
 
-    #Image processing:-
+    # IMAGE PROCESSING
     img = Image.open(file).convert("RGB")
     img = img.resize((224, 224))
 
     arr = np.array(img) / 255.0
     arr = np.expand_dims(arr, axis=0)
 
-    #Prediction:-
+    # PREDICTION
     prediction = model.predict(arr)[0][0]
 
-    #Label:-
     result = "Malignant" if prediction > 0.5 else "Benign"
-
-    # Confidence:-
     confidence = float(prediction if prediction > 0.5 else 1 - prediction)
 
-    # Risk:-
     risk = get_risk(confidence)
-
-    # Explanation:-
     explanation = get_explanation(result)
 
-    # SAVE TO DATABASE:-
+    # ✅ FIX: SAVE TIME IN UTC (IMPORTANT)
     record = {
         "username": session["user"],
         "prediction": result,
         "confidence": confidence,
         "risk": risk,
         "explanation": explanation,
-        "date": datetime.now()
+        "date": datetime.now(timezone.utc)   # 🔥 FIXED HERE
     }
 
     history.insert_one(record)
@@ -150,6 +143,7 @@ def predict():
         "risk": risk,
         "explanation": explanation
     })
+
 
 # HISTORY 
 @app.route("/history-page")
@@ -169,7 +163,9 @@ def get_history():
             {"_id": 0}
         ).sort("date", -1)
     )
+
     return jsonify(user_history)
+
 
 # DOWNLOAD REPORT
 @app.route("/download-report", methods=["POST"])
@@ -190,12 +186,15 @@ def download_report():
         content.append(Paragraph("<b>SkinAI Diagnostic Report</b>", styles["Title"]))
         content.append(Spacer(1, 12))
 
-        #USER:-
+        # USER
         content.append(Paragraph(f"<b>Patient:</b> {session['user']}", styles["Normal"]))
-        content.append(Paragraph(f"<b>Date:</b> {datetime.now().strftime('%d-%m-%Y %H:%M')}", styles["Normal"]))
+
+        # ✅ FIX: Use local time for PDF display
+        local_time = datetime.now().strftime('%d-%m-%Y %H:%M')
+        content.append(Paragraph(f"<b>Date:</b> {local_time}", styles["Normal"]))
         content.append(Spacer(1, 10))
 
-        # IMAGE HANDLING:-
+        # IMAGE
         image_path = None
         if data.get("image"):
             try:
@@ -207,14 +206,13 @@ def download_report():
             except:
                 image_path = None
 
-        # SHOW IMAGE ONLY IF EXISTS:-
         if image_path and os.path.exists(image_path):
             content.append(Paragraph("<b>Uploaded Image:</b>", styles["Normal"]))
             content.append(Spacer(1, 6))
             content.append(RLImage(image_path, width=200, height=200))
             content.append(Spacer(1, 12))
 
-        #RESULT:-
+        # RESULT
         content.append(Paragraph("<b>Analysis Result</b>", styles["Heading2"]))
         content.append(Spacer(1, 8))
 
@@ -228,7 +226,6 @@ def download_report():
         ))
 
         content.append(Spacer(1, 10))
-
         content.append(Paragraph("<b>AI Explanation</b>", styles["Heading3"]))
         content.append(Paragraph(data["explanation"], styles["Normal"]))
         content.append(Spacer(1, 12))
@@ -237,6 +234,7 @@ def download_report():
             "<i>This AI-based analysis is not a medical diagnosis. Please consult a professional.</i>",
             styles["Italic"]
         ))
+
         doc.build(content)
         return send_from_directory("reports", "report.pdf", as_attachment=True)
     
