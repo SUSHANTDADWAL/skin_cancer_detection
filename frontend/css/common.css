@@ -1,0 +1,66 @@
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',sans-serif;
+}
+
+/* BODY */
+body{
+  background:linear-gradient(135deg,#e3f2fd,#f3e5f5);
+}
+
+/* NAVBAR */
+nav{
+  height:70px;
+  background:white;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 50px;
+  box-shadow:0 2px 15px rgba(0,0,0,0.08);
+}
+
+.logo{
+  font-size:26px;
+  font-weight:900;
+  background:linear-gradient(135deg,#42a5f5,#ab47bc);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  cursor:pointer;
+}
+
+.links{
+  display:flex;
+  gap:30px;
+  list-style:none;
+}
+
+.links a{
+  text-decoration:none;
+  color:#555;
+  font-weight:600;
+}
+
+.links a:hover{
+  color:#42a5f5;
+}
+
+/* POPUP */
+.popup{
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:#4CAF50;
+  color:white;
+  padding:15px;
+  border-radius:8px;
+  display:none;
+}
+
+/* ANIMATION */
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(20px);}
+  to{opacity:1; transform:translateY(0);}
+}

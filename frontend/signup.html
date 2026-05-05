@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signup - SkinAI</title>
+
+<link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/signup.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo" onclick="location.href='/'">SkinAI</div>
+
+  <ul class="links">
+    <li><a href="/">Home</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+</nav>
+
+
+<div class="main-container">
+
+<!-- LEFT SIDE -->
+<div class="welcome-container">
+
+  <h1>Create Your Account</h1>
+
+  <p>
+    Join our AI-powered skin cancer detection system.  
+    Upload images and get instant predictions (Benign or Malignant).
+  </p>
+
+  <ul class="feature-list">
+    <li><i class='bx bxs-check-circle'></i> Fast AI predictions</li>
+    <li><i class='bx bxs-check-circle'></i> Secure authentication</li>
+    <li><i class='bx bxs-check-circle'></i> Easy to use dashboard</li>
+  </ul>
+
+</div>
+
+
+<!-- SIGNUP FORM -->
+<div class="login-container">
+
+  <h2>Signup</h2>
+
+  <p class="login-subtitle">
+    Create your account to continue
+  </p>
+
+  <form id="signupForm">
+
+    <div class="input-group">
+      <div class="input-container">
+        <i class='bx bxs-user'></i>
+        <input type="text" id="username" placeholder="Enter username" required>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <div class="input-container">
+        <i class='bx bxs-lock-alt'></i>
+        <input type="password" id="password" placeholder="Enter password" required>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn">
+      Signup
+    </button>
+
+  </form>
+
+  <p class="signup-link">
+    Already have an account?
+    <a href="login.html">Login</a>
+  </p>
+
+</div>
+
+</div>
+
+<div id="popup" class="popup"></div>
+
+<script src="script.js"></script>
+
+<script>
+// ✅ connect with your backend function
+document.getElementById("signupForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  signup();
+});
+</script>
+
+</body>
+</html>

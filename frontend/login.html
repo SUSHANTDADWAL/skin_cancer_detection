@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Skin AI</title>
+
+<link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/login.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+<nav>
+<div class="logo" onclick="location.href='/'">SkinAI</div>
+
+<ul class="links">
+<li><a href="/">Home</a></li>
+<li><a href="#">About</a></li>
+</ul>
+</nav>
+
+
+<div class="main-container">
+
+<!-- LEFT CONTENT -->
+<div class="welcome-container">
+
+<h1>Skin Cancer Detection</h1>
+
+<p>
+Upload your skin image and get instant AI-based predictions.  
+Our system helps in early detection of skin cancer (Benign or Malignant)  
+using deep learning models.
+</p>
+
+</div>
+
+
+<!-- LOGIN FORM -->
+<div class="login-container">
+
+<h2>User Login</h2>
+
+<form id="loginForm">
+
+<div class="input-group">
+<label>Username</label>
+<div class="input-container">
+<i class='bx bxs-user'></i>
+<input type="text" id="username" required>
+</div>
+</div>
+
+<div class="input-group">
+<label>Password</label>
+<div class="input-container">
+<i class='bx bxs-lock-alt'></i>
+<input type="password" id="password" required>
+</div>
+</div>
+
+<button type="submit" class="submit-btn">
+Login
+</button>
+
+</form>
+
+<p class="signup-link">
+Don't have an account?
+<a href="signup.html">Sign up</a>
+</p>
+
+</div>
+</div>
+
+<div id="popup" class="popup"></div>
+
+<script src="script.js"></script>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  login();
+});
+</script>
+
+</body>
+</html>

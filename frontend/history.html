@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>History</title>
+  <link rel="stylesheet" href="css/history.css">
+</head>
+<body>
+
+<!-- 🔝 NAVBAR -->
+<nav>
+    <div class="logo">SkinAI</div>
+    <ul class="links">
+        <li><a href="/index">Home</a></li>
+        <li><a href="#" onclick="logout()">🚪 Logout</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+
+  <h2 class="title">📊 Scan History</h2>
+
+  <!-- 🔍 FILTER -->
+  <div class="filter-box">
+    <select id="riskFilter">
+      <option value="all">All Risk</option>
+      <option value="High">High</option>
+      <option value="Medium">Medium</option>
+      <option value="Low">Low</option>
+    </select>
+
+    <input type="date" id="dateFilter">
+
+    <button onclick="loadHistory()">Apply Filter</button>
+  </div>
+
+  <!-- 📊 GRID -->
+  <div id="historyContainer" class="grid"></div>
+
+</div>
+
+<script src="script.js"></script>
+
+<script>
+  window.onload = loadHistory;
+</script>
+
+</body>
+</html>

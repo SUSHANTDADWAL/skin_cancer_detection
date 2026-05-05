@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SkinAI - Detection System</title>
+
+<link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+<nav>
+    <div class="logo">SkinAI</div>
+    <ul class="links">
+        <li><a href="/index">Home</a></li>
+        <li><a href="#" onclick="goToHistory()">📊 History</a></li>
+        <li><a href="#" onclick="logout()">🚪 Logout</a></li>
+    </ul>
+</nav>
+
+<div class="hero">
+    <h1 class="hero-title">Skin Cancer Detection</h1>
+    <p class="hero-subtitle">
+        Upload your skin image and get instant AI-based diagnosis
+    </p>
+</div>
+<div class="info-section">
+  ⚠️This AI tool assists detection and is not a medical diagnosis.
+</div>
+<div class="dashboard-container">
+    <div class="upload-card">
+        <div class="upload-icon">
+            <i class='bx bxs-image'></i>
+        </div>
+        <h2>Upload Image</h2>
+        <input type="file" id="file" accept="image/*">
+        <div id="previewBox" class="preview-box" style="display:none;">
+            <img id="preview">
+        </div>
+        <button onclick="upload()" class="predict-btn" id="predictBtn">
+            <i class='bx bxs-brain'></i> Predict
+        </button>
+        <div class="loader" id="loader"></div>
+        <p id="loadingText" style="display:none;">Analyzing image...</p>
+
+        <div id="resultBox" class="result-box" style="display:none;">
+            <div id="result"></div>
+        </div>
+
+    </div>
+
+</div>
+<script src="script.js"></script>
+
+<script>
+fetch("http://127.0.0.1:5000/index", {
+  credentials: "include"
+})
+.then(res => {
+  if (res.redirected) {
+    window.location.href = "login.html";
+  }
+});
+
+document.getElementById("file").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if(file){
+        const preview = document.getElementById("preview");
+        const box = document.getElementById("previewBox");
+        preview.src = URL.createObjectURL(file);
+        box.style.display = "block";
+    }
+});
+</script>
+</body>
+</html>
